@@ -1,0 +1,55 @@
+name: Add Reviewers on Commit
+
+on:
+  push:
+    branches:
+      - prod  # Change to your branch name if different
+
+jobs:
+  add_reviewers:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Create Pull Request
+      id: create_pr
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const response = await github.pulls.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Auto-generated Pull Request',
+            head: context.sha,
+            base: 'prod',  # Change to your branch name if different
+            body: 'Automated pull request created by GitHub Actions.',
+          });
+
+          // Output pull request number and requestor's username
+          console.log(response.data.number);
+          console.log(context.actor);
+
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Add Reviewers to Pull Request
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const requestor = context.actor;
+          const reviewers = ['mmishra1008', 'mrhussainjob'];
+
+          // Exclude requestor from the list of reviewers
+          const filteredReviewers = reviewers.filter(reviewer => reviewer !== requestor);
+
+          await github.pulls.createReviewRequest({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: ${{ steps.create_pr.outputs.number }},
+            reviewers: filteredReviewers,
+          });
+
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
