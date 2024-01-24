@@ -51,5 +51,21 @@ jobs:
             reviewers: filteredReviewers,
           });
 
+          // Get the diff of the pull request
+          const diffResponse = await github.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: ${{ steps.create_pr.outputs.number }},
+          });
+
+          // Notify reviewers with a comment including the diff
+          const comment = `Hey @mmishra1008 @mrhussainjob, can you please review this code?\n\n\`\`\`${diffResponse.data.diff}\`\`\`\nThanks!`;
+          await github.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: ${{ steps.create_pr.outputs.number }},
+            body: comment,
+          });
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
